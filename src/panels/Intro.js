@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Panel, PanelHeader, Group, Div, Avatar, FixedLayout, Button, PanelHeaderBack } from '@vkontakte/vkui';
@@ -13,8 +12,6 @@ const Intro = ({
   userHasSeenIntro
 }) => {
 
-  console.log(fetchedUser)
-
   return (
   <Panel id={id} centered={true} className={introStyles.panel}>
 		<PanelHeader>
@@ -28,14 +25,14 @@ const Intro = ({
               <>
                 <Avatar src={fetchedUser.photo_200} />
                 <h2>Привет, {fetchedUser.first_name}!</h2>
-                <h3>Этот сервис помогает следить за тем чтобы в доме не закончилась туалетная бумага.</h3>
+                <h3>Этот сервис помогает следить за тем, чтобы туалетная бумага дома не заканчивалась и ты не попал в неловкую ситуацию, когда ее не окажется в самый нужный момент.</h3>
               </>
             }
           </Div>
         </Group>
         <FixedLayout vertical='bottom'>
           <Div>
-            <Button mode='primary' size='l'>Кнопка</Button>
+            <Button mode='primary' size='l' onClick={go}>Ок, всё понятно</Button>
           </Div>
         </FixedLayout>
       </>

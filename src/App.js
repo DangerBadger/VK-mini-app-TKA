@@ -10,7 +10,8 @@ import Intro from './panels/Intro';
 import { ROUTES } from './utils/constants';
 
 const STORAGE_KEYS = {
-  STATUS: 'status',
+  STATE: 'state',
+  STATUS: 'viewStatus',
 };
 
 const App = () => {
@@ -18,55 +19,73 @@ const App = () => {
   const [fetchedUser, setfetchedUser] = useState(null);
   const [popout, setPopout] = useState(<ScreenSpinner size='large' />);
   const [userHasSeenIntro, setUserHasSeenIntro] = useState(false);
+  const [fetchedState, setFetchedState] = useState(null);
   const [snackbar, setSnackbar] = useState(null);
 
   useEffect(() => {
+    bridge.subscribe(({ detail: { type, data } }) => {
+      if (type === 'VKWebAppUpdateConfig') {
+        const schemeAttribute = document.createAttribute('scheme');
+        schemeAttribute.value = data.scheme ? data.scheme : 'client_light';
+        document.body.attributes.setNamedItem(schemeAttribute);
+      }
+    });
+
     async function fetchData() {
       const user = await bridge.send('VKWebAppGetUserInfo');
       const storageData = await bridge.send('VKWebAppStorageGet', {
         keys: Object.values(STORAGE_KEYS)
       });
-      const data = {};
 
-      storageData.keys.forEach(({ key, value }) => {
-        try {
-          data[key] = value ? JSON.parse(value) : {};
-          switch (key) {
-            case STORAGE_KEYS.STATUS:
-              if (data[key].hasSeenIntro) {
-                setActivePanel(ROUTES.HOME);
-                setUserHasSeenIntro(true);
-              }
-              break;
-            default:
-              break;
+      if (Array.isArray(storageData.keys)) {
+        const data = {};
+        storageData.keys.forEach(({ key, value }) => {
+          try {
+            data[key] = value ? JSON.parse(value) : {};
+            switch (key) {
+              case STORAGE_KEYS.STATUS:
+                if (data[key]?.hasSeenIntro) {
+                  setActivePanel(ROUTES.HOME);
+                  setUserHasSeenIntro(true);
+                }
+                break;
+              case STORAGE_KEYS.STATE:
+                setFetchedState(data[key]);
+                break;
+              default:
+                break;
+            }
+          } catch (err) {
+            setSnackbar(
+              <Snackbar
+                layout='vertical'
+                onClose={() => setSnackbar(null)}
+                duration={900}
+                before={<Avatar size={24} style={{ backgroundColor: 'var(--dynamic-red)' }}>
+                  <Icon24Error fill='#fff' width='14' height='14' />
+                </Avatar>}
+              >
+                Проблема получения данных из Storage
+              </Snackbar>
+            );
+            setFetchedState({});
           }
-        } catch(err) {
-          setSnackbar(
-            <Snackbar
-              layout='vertical'
-              onClose={() => setSnackbar(null)}
-              duration={900}
-              before={<Avatar size={24} style={{ backgroundColor: 'var(--dynamic-red)'}}>
-                <Icon24Error fill='#fff' width='14' height='14' />
-              </Avatar>}
-            >
-              Проблема получения данных из Storage
-            </Snackbar>
-          )
-        }
-      })
+        });
+      } else {
+        setFetchedState({});
+      }
       setfetchedUser(user);
       setPopout(null);
+      console.log(storageData.keys[0].value);
     }
     fetchData();
   }, []);
 
-  const go = e => {
-    setActivePanel(e.currentTarget.dataset.to);
+  const go = (panel) => {
+    setActivePanel(panel);
   };
 
-  const viewIntro = async function() {
+  const viewIntro = async function () {
     try {
       await bridge.send('VKWebAppStorageSet', {
         key: STORAGE_KEYS.STATUS,
@@ -74,13 +93,14 @@ const App = () => {
           hasSeenIntro: true,
         }),
       });
-    } catch(err) {
+      go(ROUTES.HOME);
+    } catch (err) {
       setSnackbar(
         <Snackbar
           layout='vertical'
           onClose={() => setSnackbar(null)}
           duration={900}
-          before={<Avatar size={24} style={{ backgroundColor: 'var(--dynamic-red)'}}>
+          before={<Avatar size={24} style={{ backgroundColor: 'var(--dynamic-red)' }}>
             <Icon24Error fill='#fff' width='14' height='14' />
           </Avatar>}
         >
@@ -95,13 +115,8 @@ const App = () => {
       <SplitLayout popout={popout}>
         <SplitCol>
           <View activePanel={activePanel}>
-            <Home id={ROUTES.HOME} fetchedUser={fetchedUser} go={go} snackbarError={snackbar} />
+            <Home id={ROUTES.HOME} fetchedUser={fetchedUser} fetchedState={fetchedState} snackbarError={snackbar} />
             <Intro id={ROUTES.INTRO} go={viewIntro} fetchedUser={fetchedUser} snackbarError={snackbar} userHasSeenIntro={userHasSeenIntro} />
-            {/* <Panel id='main'>
-              <PanelHeader>Donor Search games</PanelHeader>
-              <Group mode='card' header={<Header mode='secondary'>Попробуйте наши игры:</Header>}>
-              </Group>
-            </Panel> */}
           </View>
         </SplitCol>
       </SplitLayout>

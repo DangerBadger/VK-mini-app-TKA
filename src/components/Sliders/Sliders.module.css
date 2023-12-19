@@ -1,0 +1,35 @@
+.button {
+	margin-bottom: 12px;
+	border-radius: 50%;
+	width: 120px;
+	height: 120px;
+	transform: translateY(-6px);
+	background-color: #23B7D7;
+	box-shadow: 0 6px 0 #097B93;
+	transition: all .05s ease-in-out;
+}
+
+.button:hover {
+  transform: translateY(-5px) scale(1.02);
+}
+
+.button:active {
+	transform: translateY(0);
+	box-shadow: none;
+}
+
+.button img {
+	width: 48px;
+	height: 48px;
+	transform: translateY(6px);
+}
+
+span[role="img"] {
+	padding-right: 4px;
+}
+
+.buttonContainer {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
